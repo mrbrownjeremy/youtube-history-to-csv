@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.0.4
+// @version      1.0.5
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -23,6 +23,14 @@
     const d = new Date();
     if (/^today$/i.test(t)) return fmt(d);
     if (/^yesterday$/i.test(t)) { d.setDate(d.getDate() - 1); return fmt(d); }
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const idx = days.indexOf(t.toLowerCase());
+    if (idx !== -1) {
+      let daysAgo = (d.getDay() - idx + 7) % 7;
+      if (daysAgo === 0) daysAgo = 7;
+      d.setDate(d.getDate() - daysAgo);
+      return fmt(d);
+    }
     const p = new Date(t);
     return isNaN(p) ? t : fmt(p);
   }
