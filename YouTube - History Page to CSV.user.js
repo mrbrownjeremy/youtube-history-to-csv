@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.1.6
+// @version      1.1.7
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -144,7 +144,12 @@
       downloadCSV(rows);
     });
 
-    const scrollBtn = makeBtn('⏬', 'Auto-scroll for 10 seconds to load more history items');
+    const doScroll = () => {
+      const el = document.scrollingElement || document.documentElement;
+      el.scrollTop = el.scrollHeight;
+    };
+
+    const scrollBtn = makeBtn('⏬', 'Auto-scroll every 2 seconds to load more history items');
     let scrollTimer = null;
     scrollBtn.addEventListener('click', () => {
       if (scrollTimer) {
@@ -154,10 +159,10 @@
         return;
       }
       scrollBtn.textContent = '⏹';
-      let elapsed = 0;
+      doScroll();
+      let elapsed = 2000;
       scrollTimer = setInterval(() => {
-        const el = document.scrollingElement || document.documentElement;
-        el.scrollTop = el.scrollHeight;
+        doScroll();
         elapsed += 2000;
         if (elapsed >= 10000) {
           clearInterval(scrollTimer);
