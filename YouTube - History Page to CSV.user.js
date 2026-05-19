@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.0.7
+// @version      1.0.8
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -113,14 +113,11 @@
     URL.revokeObjectURL(blobUrl);
   }
 
-  function injectButton() {
-    if (document.getElementById(BUTTON_ID)) return;
-
+  function makeBtn(text, title) {
     const btn = document.createElement('button');
-    btn.id = BUTTON_ID;
-    btn.textContent = '⬇ Download Visible to CSV';
+    btn.textContent = text;
+    btn.title = title;
     btn.style.cssText = [
-      'position:fixed', 'top:60px', 'right:24px', 'z-index:9999',
       'background:#fff', 'color:#0f0f0f',
       'border:1px solid #d3d3d3', 'border-radius:18px', 'padding:8px 16px',
       'font-family:Roboto,Arial,sans-serif', 'font-size:14px', 'font-weight:500',
@@ -128,13 +125,48 @@
     ].join(';');
     btn.addEventListener('mouseenter', () => { btn.style.background = '#f2f2f2'; });
     btn.addEventListener('mouseleave', () => { btn.style.background = '#fff'; });
-    btn.addEventListener('click', () => {
+    return btn;
+  }
+
+  function injectButton() {
+    if (document.getElementById(BUTTON_ID)) return;
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;top:60px;right:24px;z-index:9999;display:flex;gap:8px;align-items:center;';
+
+    const dlBtn = makeBtn('⬇ Download Visible to CSV', 'Download all currently-loaded history items as a CSV');
+    dlBtn.id = BUTTON_ID;
+    dlBtn.addEventListener('click', () => {
       const rows = scrapeHistory();
       if (rows.length === 0) { alert('No history items found.'); return; }
       downloadCSV(rows);
     });
 
-    document.body.appendChild(btn);
+    const scrollBtn = makeBtn('⏬', 'Auto-scroll for 10 seconds to load more history items');
+    let scrollTimer = null;
+    scrollBtn.addEventListener('click', () => {
+      if (scrollTimer) {
+        clearInterval(scrollTimer);
+        scrollTimer = null;
+        scrollBtn.textContent = '⏬';
+        return;
+      }
+      scrollBtn.textContent = '⏹';
+      let elapsed = 0;
+      scrollTimer = setInterval(() => {
+        window.scrollBy(0, 600);
+        elapsed += 100;
+        if (elapsed >= 10000) {
+          clearInterval(scrollTimer);
+          scrollTimer = null;
+          scrollBtn.textContent = '⏬';
+        }
+      }, 100);
+    });
+
+    wrap.appendChild(dlBtn);
+    wrap.appendChild(scrollBtn);
+    document.body.appendChild(wrap);
   }
 
   injectButton();
