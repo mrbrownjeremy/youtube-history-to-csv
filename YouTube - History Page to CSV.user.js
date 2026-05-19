@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.1.8
+// @version      1.2.0
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -149,27 +149,82 @@
       el.scrollTop = el.scrollHeight;
     };
 
-    const scrollBtn = makeBtn('⏬', 'Auto-scroll every 2 seconds to load more history items');
+    const INTERVAL = 3000;
+
+    const dialog = document.createElement('div');
+    dialog.style.cssText = [
+      'position:fixed', 'top:96px', 'right:24px', 'z-index:9999',
+      'background:#fff', 'border:1px solid #d3d3d3', 'border-radius:12px',
+      'padding:10px 14px', 'font-family:Roboto,Arial,sans-serif', 'font-size:13px',
+      'box-shadow:0 2px 6px rgba(0,0,0,.15)', 'display:none', 'min-width:260px',
+    ].join(';');
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+    row.innerHTML = '<span>Scroll to Bottom Repeat</span>';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.value = '10';
+    input.style.cssText = 'width:52px;padding:4px 6px;border:1px solid #d3d3d3;border-radius:6px;font-size:13px;font-family:inherit;';
+
+    const enterBtn = document.createElement('button');
+    enterBtn.textContent = 'Enter';
+    enterBtn.style.cssText = [
+      'background:#fff', 'border:1px solid #d3d3d3', 'border-radius:8px',
+      'padding:4px 10px', 'font-family:Roboto,Arial,sans-serif', 'font-size:13px',
+      'cursor:pointer',
+    ].join(';');
+
+    const estimate = document.createElement('div');
+    estimate.style.cssText = 'margin-top:6px;color:#606060;';
+
+    const updateEstimate = () => {
+      const n = Math.max(1, parseInt(input.value) || 1);
+      const total = n * INTERVAL / 1000;
+      estimate.textContent = `Estimated time: ~${total}s`;
+    };
+    input.addEventListener('input', updateEstimate);
+    updateEstimate();
+
+    row.appendChild(input);
+    row.appendChild(enterBtn);
+    dialog.appendChild(row);
+    dialog.appendChild(estimate);
+    document.body.appendChild(dialog);
+
+    const scrollBtn = makeBtn('⏬', 'Scroll to bottom repeatedly to load more history items');
     let scrollTimer = null;
-    scrollBtn.addEventListener('click', () => {
-      if (scrollTimer) {
-        clearInterval(scrollTimer);
-        scrollTimer = null;
-        scrollBtn.textContent = '⏬';
-        return;
-      }
+
+    const stopScroll = () => {
+      clearInterval(scrollTimer);
+      scrollTimer = null;
+      scrollBtn.textContent = '⏬';
+      dialog.style.display = 'none';
+    };
+
+    const startScroll = () => {
+      let remaining = Math.max(1, parseInt(input.value) || 1);
+      dialog.style.display = 'none';
       scrollBtn.textContent = '⏹';
       doScroll();
-      let elapsed = 3000;
+      remaining--;
+      if (remaining <= 0) { scrollBtn.textContent = '⏬'; return; }
       scrollTimer = setInterval(() => {
         doScroll();
-        elapsed += 3000;
-        if (elapsed >= 10000) {
-          clearInterval(scrollTimer);
-          scrollTimer = null;
-          scrollBtn.textContent = '⏬';
-        }
-      }, 3000);
+        remaining--;
+        if (remaining <= 0) stopScroll();
+      }, INTERVAL);
+    };
+
+    enterBtn.addEventListener('click', startScroll);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') startScroll(); });
+
+    scrollBtn.addEventListener('click', () => {
+      if (scrollTimer) { stopScroll(); return; }
+      dialog.style.display = dialog.style.display === 'none' ? 'block' : 'none';
+      if (dialog.style.display === 'block') input.focus();
     });
 
     wrap.appendChild(dlBtn);
