@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.0.0
+// @version      1.0.2
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -91,47 +91,35 @@
     URL.revokeObjectURL(blobUrl);
   }
 
-  function injectButton(container) {
+  function injectButton() {
     if (document.getElementById(BUTTON_ID)) return;
 
-    const pauseBtn = container.querySelector('button[aria-label="Pause watch history"]');
-    if (!pauseBtn) return;
-    const pauseRenderer = pauseBtn.closest('ytd-button-renderer');
-    if (!pauseRenderer) return;
-
-    const clone = pauseRenderer.cloneNode(true);
-    const cloneBtn = clone.querySelector('button');
-    if (!cloneBtn) return;
-
-    cloneBtn.id = BUTTON_ID;
-    cloneBtn.setAttribute('aria-label', 'Download visible to CSV');
-
-    const textEl = clone.querySelector('.ytSpecButtonShapeNextButtonTextContent span');
-    if (textEl) textEl.textContent = 'Download visible to CSV';
-
-    const iconContainer = clone.querySelector('.ytSpecButtonShapeNextIcon > span > span > div');
-    if (iconContainer) {
-      iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events:none;display:inherit;width:100%;height:100%;"><path d="M12 16l-5-5 1.4-1.4 2.6 2.6V4h2v8.2l2.6-2.6L17 11l-5 5zm-7 4v-2h14v2H5z"/></svg>`;
-    }
-
-    cloneBtn.addEventListener('click', () => {
+    const btn = document.createElement('button');
+    btn.id = BUTTON_ID;
+    btn.textContent = '⬇ Download Visible to CSV';
+    btn.style.cssText = [
+      'position:fixed', 'bottom:24px', 'right:24px', 'z-index:9999',
+      'background:#fff', 'color:#0f0f0f', 'border:1px solid #d3d3d3',
+      'border-radius:18px', 'padding:8px 16px',
+      'font-family:Roboto,Arial,sans-serif', 'font-size:14px', 'font-weight:500',
+      'cursor:pointer', 'box-shadow:0 2px 6px rgba(0,0,0,.15)',
+      'transition:box-shadow .15s',
+    ].join(';');
+    btn.addEventListener('mouseenter', () => { btn.style.boxShadow = '0 4px 12px rgba(0,0,0,.25)'; });
+    btn.addEventListener('mouseleave', () => { btn.style.boxShadow = '0 2px 6px rgba(0,0,0,.15)'; });
+    btn.addEventListener('click', () => {
       const rows = scrapeHistory();
       if (rows.length === 0) { alert('No history items found.'); return; }
       downloadCSV(rows);
     });
 
-    pauseRenderer.insertAdjacentElement('afterend', clone);
+    document.body.appendChild(btn);
   }
 
-  const observer = new MutationObserver(() => {
-    const container = document.querySelector('ytd-browse-feed-actions-renderer #contents');
-    if (!container) return;
-    const pauseBtn = container.querySelector('button[aria-label="Pause watch history"]');
-    if (!pauseBtn) return;
-    injectButton(container);
-    observer.disconnect();
-  });
-
-  observer.observe(document.body, { childList: true, subtree: true });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectButton);
+  } else {
+    injectButton();
+  }
 
 })();
