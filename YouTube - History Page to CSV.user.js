@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.0.6
+// @version      1.0.7
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -32,9 +32,12 @@
       return fmt(d);
     }
     const MONTHS = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+    const MONTHS_SHORT = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
     const m = t.match(/^(\w+)\s+(\d+)(?:,\s*(\d{4}))?$/);
     if (m) {
-      const mIdx = MONTHS.indexOf(m[1].toLowerCase());
+      const key = m[1].toLowerCase();
+      let mIdx = MONTHS.indexOf(key);
+      if (mIdx === -1) mIdx = MONTHS_SHORT.indexOf(key);
       if (mIdx !== -1) {
         const today = new Date();
         const year = m[3] ? parseInt(m[3]) : today.getFullYear();
