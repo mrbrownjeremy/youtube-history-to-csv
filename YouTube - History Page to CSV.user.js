@@ -99,33 +99,28 @@
     const pauseRenderer = pauseBtn.closest('ytd-button-renderer');
     if (!pauseRenderer) return;
 
-    const wrapper = document.createElement('ytd-button-renderer');
-    wrapper.className = pauseRenderer.className;
+    const clone = pauseRenderer.cloneNode(true);
+    const cloneBtn = clone.querySelector('button');
+    if (!cloneBtn) return;
 
-    const btn = document.createElement('button');
-    btn.id = BUTTON_ID;
-    btn.className = pauseBtn.className;
-    btn.setAttribute('aria-label', 'Download visible to CSV');
+    cloneBtn.id = BUTTON_ID;
+    cloneBtn.setAttribute('aria-label', 'Download visible to CSV');
 
-    const iconDiv = document.createElement('div');
-    iconDiv.setAttribute('aria-hidden', 'true');
-    iconDiv.className = 'ytSpecButtonShapeNextIcon';
-    iconDiv.innerHTML = `<span class="ytIconWrapperHost" style="width:24px;height:24px;"><span class="yt-icon-shape ytSpecIconShapeHost"><div style="width:100%;height:100%;display:block;fill:currentcolor;"><svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events:none;display:inherit;width:100%;height:100%;"><path d="M12 16l-5-5 1.4-1.4 2.6 2.6V4h2v8.2l2.6-2.6L17 11l-5 5zm-7 4v-2h14v2H5z"/></svg></div></span></span>`;
+    const textEl = clone.querySelector('.ytSpecButtonShapeNextButtonTextContent span');
+    if (textEl) textEl.textContent = 'Download visible to CSV';
 
-    const textDiv = document.createElement('div');
-    textDiv.className = 'ytSpecButtonShapeNextButtonTextContent';
-    textDiv.innerHTML = `<span class="ytAttributedStringHost ytAttributedStringWhiteSpaceNoWrap" role="text">Download visible to CSV</span>`;
+    const iconContainer = clone.querySelector('.ytSpecButtonShapeNextIcon > span > span > div');
+    if (iconContainer) {
+      iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" focusable="false" aria-hidden="true" style="pointer-events:none;display:inherit;width:100%;height:100%;"><path d="M12 16l-5-5 1.4-1.4 2.6 2.6V4h2v8.2l2.6-2.6L17 11l-5 5zm-7 4v-2h14v2H5z"/></svg>`;
+    }
 
-    btn.appendChild(iconDiv);
-    btn.appendChild(textDiv);
-    btn.addEventListener('click', () => {
+    cloneBtn.addEventListener('click', () => {
       const rows = scrapeHistory();
       if (rows.length === 0) { alert('No history items found.'); return; }
       downloadCSV(rows);
     });
 
-    wrapper.appendChild(btn);
-    pauseRenderer.insertAdjacentElement('afterend', wrapper);
+    pauseRenderer.insertAdjacentElement('afterend', clone);
   }
 
   const observer = new MutationObserver(() => {
