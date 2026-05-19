@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube - History Page to CSV
 // @namespace    https://github.com/mrbrownjeremy
-// @version      1.0.2
+// @version      1.0.3
 // @description  Adds a "Download Visible to CSV" button to the YouTube history page
 // @author       Jeremy Brown
 // @match        https://www.youtube.com/feed/history*
@@ -91,35 +91,38 @@
     URL.revokeObjectURL(blobUrl);
   }
 
-  function injectButton() {
+  function injectButton(secondary) {
     if (document.getElementById(BUTTON_ID)) return;
 
     const btn = document.createElement('button');
     btn.id = BUTTON_ID;
     btn.textContent = '⬇ Download Visible to CSV';
     btn.style.cssText = [
-      'position:fixed', 'bottom:24px', 'right:24px', 'z-index:9999',
-      'background:#fff', 'color:#0f0f0f', 'border:1px solid #d3d3d3',
+      'display:block', 'width:calc(100% - 48px)', 'margin:8px 24px',
+      'background:transparent', 'color:var(--yt-spec-text-primary,#0f0f0f)',
+      'border:1px solid var(--yt-spec-10-percent-layer,#d3d3d3)',
       'border-radius:18px', 'padding:8px 16px',
       'font-family:Roboto,Arial,sans-serif', 'font-size:14px', 'font-weight:500',
-      'cursor:pointer', 'box-shadow:0 2px 6px rgba(0,0,0,.15)',
-      'transition:box-shadow .15s',
+      'cursor:pointer', 'text-align:left',
     ].join(';');
-    btn.addEventListener('mouseenter', () => { btn.style.boxShadow = '0 4px 12px rgba(0,0,0,.25)'; });
-    btn.addEventListener('mouseleave', () => { btn.style.boxShadow = '0 2px 6px rgba(0,0,0,.15)'; });
+    btn.addEventListener('mouseenter', () => { btn.style.background = 'var(--yt-spec-10-percent-layer,rgba(0,0,0,.05))'; });
+    btn.addEventListener('mouseleave', () => { btn.style.background = 'transparent'; });
     btn.addEventListener('click', () => {
       const rows = scrapeHistory();
       if (rows.length === 0) { alert('No history items found.'); return; }
       downloadCSV(rows);
     });
 
-    document.body.appendChild(btn);
+    secondary.appendChild(btn);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectButton);
-  } else {
-    injectButton();
-  }
+  const observer = new MutationObserver(() => {
+    const secondary = document.querySelector('div#secondary');
+    if (!secondary) return;
+    injectButton(secondary);
+    observer.disconnect();
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 
 })();
